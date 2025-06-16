@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 export default function ToggleDarkMode() {
   const [isDark, setIsDark] = useState(false);
@@ -19,13 +20,10 @@ export default function ToggleDarkMode() {
   return (
     <button
       onClick={toggle}
-      className="w-10 h-5 bg-white/30 dark:bg-white/10 rounded-full flex items-center p-1 transition relative"
+      className="text-yellow-400 hover:scale-110 transition-transform duration-200"
+      aria-label="Toggle dark mode"
     >
-      <div
-        className={`h-3.5 w-3.5 bg-white rounded-full shadow-md transform transition ${
-          isDark ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      ></div>
+      {isDark ? <Sun size={20} /> : <Moon size={20} />}
     </button>
   );
 }
