@@ -13,10 +13,10 @@ import AddWord from './AddWord';
 import Library from './Library';
 import Profile from './Profile';
 import Auth from './Auth';
-import UpdatePassword from './UpdatePassword';
 import WordDetail from './WordDetail';
 import { supabase } from './supabase';
 import NavBar from './components/NavBar';
+import ResetPassword from './ResetPassword';
 
 function AppRoutes({ session }) {
   const location = useLocation();
@@ -46,7 +46,7 @@ useEffect(() => {
         <Route path="/library" element={<Library />} />
         <Route path="/library/:id" element={<WordDetail />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>
