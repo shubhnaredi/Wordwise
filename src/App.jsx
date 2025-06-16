@@ -22,19 +22,19 @@ function AppRoutes({ session }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ✅ Only redirect if NOT on /update-password
   useEffect(() => {
     if (
       session &&
-      location.pathname !== '/update-password' &&
-      location.pathname !== '/auth'
+      !['/update-password', '/auth'].includes(location.pathname)
     ) {
       navigate('/dashboard');
     }
-  }, [session, location, navigate]);
+  }, [session, location.pathname]);
 
   return (
     <>
-      {/* NavBar shown on all authenticated routes except Auth/Reset */}
+      {/* NavBar only if session and not on auth/reset screens */}
       {session &&
         !['/auth', '/update-password'].includes(location.pathname) && (
           <NavBar />
