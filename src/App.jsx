@@ -9,11 +9,13 @@ import Profile from './Profile';
 import Auth from './Auth';
 import ProtectedRoute from './ProtectedRoute';
 import Layout from './Layout';
+import UpdatePassword from './UpdatePassword';
 
 export default function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/" element={<Auth />} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route
