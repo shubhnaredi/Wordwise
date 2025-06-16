@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -21,20 +21,23 @@ import NavBar from './components/NavBar';
 function AppRoutes({ session }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const hasRedirected = useRef(false); // ✅ prevents repeated redirects
 
-  // ✅ Only redirect if NOT on /update-password
   useEffect(() => {
+    // Only redirect if not already redirected and not on exempt pages
     if (
       session &&
-      !['/update-password', '/auth'].includes(location.pathname)
+      !['/auth', '/update-password'].includes(location.pathname) &&
+      !hasRedirected.current
     ) {
+      hasRedirected.current = true;
       navigate('/dashboard');
     }
-  }, [session, location.pathname]);
+  }, [session, location.pathname, navigate]);
 
   return (
     <>
-      {/* NavBar only if session and not on auth/reset screens */}
+      {/* Show NavBar only if logged in and not on auth/reset */}
       {session &&
         !['/auth', '/update-password'].includes(location.pathname) && (
           <NavBar />
@@ -49,6 +52,7 @@ function AppRoutes({ session }) {
         <Route path="/library/:id" element={<WordDetail />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>
   );
