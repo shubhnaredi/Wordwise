@@ -24,14 +24,13 @@ function AppRoutes({ session }) {
   const hasRedirected = useRef(false);
 
 useEffect(() => {
-  // 🔒 TEMP DISABLED: Redirect logic
-  // const isProtectedPage = !['/auth', '/update-password'].includes(location.pathname);
-  // if (session && isProtectedPage && !hasRedirected.current) {
-  //   hasRedirected.current = true;
-  //   navigate('/dashboard');
-  // }
-}, [session, location.pathname, navigate]);
+  const isProtectedPage = !['/auth', '/update-password'].includes(location.pathname);
 
+  if (session && isProtectedPage && !hasRedirected.current) {
+    hasRedirected.current = true;
+    navigate('/dashboard');
+  }
+}, [session, location.pathname, navigate]);
 
   return (
     <>
