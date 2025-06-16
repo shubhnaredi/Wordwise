@@ -12,11 +12,10 @@ export default function NavBar() {
     const handleScroll = () => {
       const current = window.scrollY;
       setScrolled(current > 10);
-
       if (current > lastScrollY && current > 80) {
-        setShow(false); // scroll down
+        setShow(false);
       } else {
-        setShow(true); // scroll up
+        setShow(true);
       }
       lastScrollY = current;
     };
@@ -27,9 +26,8 @@ export default function NavBar() {
   return (
     <nav
       className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50
-        px-6 py-3 rounded-full max-w-[90vw] sm:max-w-[720px]
-        shadow-xl transition-all duration-300 backdrop-blur-xl
-        border border-white/10 dark:border-white/10
+        px-4 py-2 sm:px-6 sm:py-3 rounded-2xl w-[95vw] max-w-sm sm:max-w-[720px]
+        transition-all duration-300 backdrop-blur-xl shadow-xl border border-white/10
         ${
           show
             ? 'opacity-100 scale-100'
@@ -42,7 +40,7 @@ export default function NavBar() {
         }
       `}
     >
-      <div className="flex justify-between items-center gap-4 text-sm font-medium text-text-light dark:text-text-dark">
+      <div className="flex flex-wrap justify-between items-center gap-x-2 gap-y-2 text-xs sm:text-sm font-medium text-text-light dark:text-text-dark">
         <NavLinkItem to="/dashboard" active={location.pathname === '/dashboard'}>
           🏠 Dashboard
         </NavLinkItem>
@@ -65,7 +63,7 @@ function NavLinkItem({ to, active, children }) {
   return (
     <Link
       to={to}
-      className={`px-3 py-1 rounded-full transition duration-200
+      className={`px-3 py-2 min-w-[44px] min-h-[44px] text-center rounded-full transition duration-200
         ${
           active
             ? 'bg-yellow-300/90 text-black font-semibold shadow-inner'
