@@ -11,32 +11,48 @@ export default function AddWord() {
   const [note, setNote] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
-
-  const predefinedTags = ['GRE', 'TOEFL', 'Casual', 'Formal', 'Slang']; // Later: from /profile
+  const [userTags, setUserTags] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) navigate('/');
-    });
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return navigate('/');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('tags')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.tags) {
+        const tagsArray = profile.tags.split(',').map(t => t.trim());
+        setUserTags(tagsArray);
+      }
+    })();
   }, []);
 
-  async function fetchMeaning() {
-    if (!word) return;
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      const first = data[0];
-      setMeaning(first.meanings?.[0]?.definitions?.[0]?.definition || '');
-      setExample(first.meanings?.[0]?.definitions?.[0]?.example || '');
-      setShowResult(true);
-    }
+  function toggleTag(tag) {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   }
 
-  function toggleTag(tag) {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+  async function fetchMeaning() {
+    if (!word.trim()) return;
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const first = data[0];
+        setMeaning(first.meanings?.[0]?.definitions?.[0]?.definition || '');
+        setExample(first.meanings?.[0]?.definitions?.[0]?.example || '');
+        setShowResult(true);
+      }
+    } catch (e) {
+      alert('Error fetching meaning.');
+    }
   }
 
   async function saveWord() {
@@ -91,35 +107,14 @@ export default function AddWord() {
             className="w-full mb-4 p-3 rounded-xl bg-white/30 dark:bg-white/10 text-black dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400"
           />
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            {predefinedTags.map((tag) => (
-              <span
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-all ${
-                  selectedTags.includes(tag)
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-white/30 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-yellow-300 hover:text-black'
-                }`}
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="💭 Memory note (optional)"
-            className="w-full mb-4 p-3 rounded-xl bg-white/30 dark:bg-white/10 text-black dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400"
-          />
-
-          <button
-            onClick={fetchMeaning}
-            className="w-full mb-6 py-3 rounded-xl bg-yellow-400 text-black font-semibold hover:shadow-md"
-          >
-            🔍 Fetch Meaning
-          </button>
+          {!showResult && (
+            <button
+              onClick={fetchMeaning}
+              className="w-full mb-6 py-3 rounded-xl bg-yellow-400 text-black font-semibold hover:shadow-md"
+            >
+              🔍 Fetch Meaning
+            </button>
+          )}
 
           {showResult && (
             <>
@@ -136,6 +131,29 @@ export default function AddWord() {
                   {example || '—'}
                 </div>
               </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {userTags.map((tag) => (
+                  <span
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-all ${
+                      selectedTags.includes(tag)
+                        ? 'bg-yellow-400 text-black'
+                        : 'bg-white/30 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-yellow-300 hover:text-black'
+                    }`}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="💭 Memory note (optional)"
+                className="w-full mb-4 p-3 rounded-xl bg-white/30 dark:bg-white/10 text-black dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400"
+              />
 
               <button
                 onClick={saveWord}

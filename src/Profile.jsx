@@ -1,138 +1,134 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from './supabase';
-import NavBar from './components/NavBar';
+import { supabase } from '../supabase';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return navigate('/');
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      loadTags(user.id);
-    });
 
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('tags')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.tags) {
+        const tagArray = profile.tags.split(',').map(t => t.trim());
+        setTags(tagArray);
+      }
+    })();
   }, []);
 
-  async function loadTags(user_id) {
-    const { data, error } = await supabase
-      .from('user_tags')
-      .select('tag')
-      .eq('user_id', user_id);
-    if (!error) setTags(data.map((row) => row.tag));
-  }
-
-  async function addTag() {
-    const clean = newTag.trim();
-    if (!clean || tags.includes(clean)) return;
+  async function updateTags(updatedTags) {
     const { error } = await supabase
-      .from('user_tags')
-      .insert({ user_id: user.id, tag: clean });
+      .from('profiles')
+      .update({ tags: updatedTags.join(', ') })
+      .eq('id', user.id);
+
     if (!error) {
-      setTags([...tags, clean]);
+      setTags(updatedTags);
       setNewTag('');
+    } else {
+      alert(error.message);
     }
   }
 
-  async function removeTag(tag) {
-    const { error } = await supabase
-      .from('user_tags')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('tag', tag);
-    if (!error) {
-      setTags(tags.filter((t) => t !== tag));
+  function handleAddTag() {
+    const tag = newTag.trim();
+    if (tag && !tags.includes(tag)) {
+      updateTags([...tags, tag]);
     }
   }
 
-  function toggleDarkMode() {
-    const html = document.documentElement;
-    html.classList.toggle('dark');
-    setIsDark(!isDark);
+  function handleDeleteTag(tagToRemove) {
+    updateTags(tags.filter(tag => tag !== tagToRemove));
   }
 
-  function copyId() {
-    navigator.clipboard.writeText(user.id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function logout() {
+  async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.href = '/';
+    navigate('/');
   }
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300">
-      <NavBar />
-      <div className="pt-28 max-w-2xl mx-auto px-4">
-        <div className="bg-white/10 dark:bg-white/5 backdrop-blur-md p-6 rounded-xl shadow-xl border border-white/20">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-yellow-400">👤 Profile</h1>
-            <button
-              onClick={toggleDarkMode}
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded-xl hover:opacity-90"
-            >
-              {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
-            </button>
-          </div>
+      <div className="max-w-xl mx-auto pt-28 px-4">
+        <div className="rounded-xl bg-white/10 dark:bg-white/5 border border-white/20 p-6 shadow-xl backdrop-blur-md">
+          <h1 className="text-3xl font-bold text-center text-yellow-400 mb-6">👤 Profile</h1>
 
           {user && (
-            <div className="text-center mb-6">
-              <p className="text-lg font-medium text-black dark:text-white">{user.email}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2 mt-1">
-                ID: <span className="font-mono">{user.id.slice(0, 10)}...</span>
-                <button
-                  onClick={copyId}
-                  className="text-blue-500 hover:text-blue-700 transition"
+            <>
+              <div className="mb-4">
+                <strong>Email:</strong> {user.email}
+              </div>
+              <div className="mb-4">
+                <strong>Name:</strong> {user.user_metadata?.name || '—'}
+              </div>
+              <div className="mb-4">
+                <strong>User ID:</strong>{' '}
+                <span
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.id);
+                    alert('✅ Copied ID');
+                  }}
+                  className="cursor-pointer underline text-blue-400"
                 >
-                  {copied ? '✅ Copied' : '📋 Copy'}
-                </button>
-              </p>
-            </div>
+                  {user.id.slice(0, 8)}... (click to copy)
+                </span>
+              </div>
+            </>
           )}
 
-          <div className="mb-6">
-            <h2 className="font-semibold mb-2">🏷 My Tags</h2>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  onClick={() => removeTag(tag)}
-                  className="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm cursor-pointer hover:line-through"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Add tag..."
-                className="flex-grow p-2 rounded-xl bg-white/30 dark:bg-white/10 text-black dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400"
-              />
-              <button
-                onClick={addTag}
-                className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+          <hr className="my-6 border-white/20" />
+
+          <h2 className="text-xl font-semibold mb-2">🏷️ Your Tags</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tags.map(tag => (
+              <span
+                key={tag}
+                className="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm flex items-center gap-2"
               >
-                ➕
-              </button>
-            </div>
+                #{tag}
+                <button
+                  onClick={() => handleDeleteTag(tag)}
+                  className="text-black hover:text-red-600 font-bold"
+                >
+                  ✖
+                </button>
+              </span>
+            ))}
           </div>
 
-          <button
-            onClick={logout}
-            className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl mt-4"
+          <div className="flex gap-2 mb-4">
+            <input
+              value={newTag}
+              onChange={e => setNewTag(e.target.value)}
+              placeholder="Add new tag"
+              className="flex-1 p-2 rounded-xl bg-white/30 dark:bg-white/10 text-black dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400"
+            />
+            <Button variant="secondary" onClick={handleAddTag}>
+              ➕ Add
+            </Button>
+          </div>
+
+          <hr className="my-6 border-white/20" />
+
+          <Button
+            variant="destructive"
+            onClick={handleLogout}
+            className="w-full bg-red-600 hover:bg-red-700 text-white"
           >
-            🚪 Logout
-          </button>
+            🔓 Logout
+          </Button>
         </div>
       </div>
     </div>
