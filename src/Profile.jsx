@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from './supabase.js';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "../components/ui/button"
+import { Button } from "./components/ui/button"
 
 
 export default function Profile() {

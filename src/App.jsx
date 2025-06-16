@@ -8,15 +8,15 @@ import {
   useNavigate,
 } from 'react-router-dom';
 
-import Dashboard from './Dashboard';
-import AddWord from './AddWord';
-import Library from './Library';
-import Profile from './Profile';
-import Auth from './Auth';
-import WordDetail from './WordDetail';
-import { supabase } from './supabase';
-import NavBar from './components/NavBar';
-import ResetPassword from './ResetPassword';
+import Dashboard from './Dashboard.jsx';
+import AddWord from './AddWord.jsx';
+import Library from './Library.jsx';
+import Profile from './Profile.jsx';
+import Auth from './Auth.jsx';
+import WordDetail from './WordDetail.jsx';
+import { supabase } from './supabase.js';
+import NavBar from './components/NavBar.jsx';
+import ResetPassword from './ResetPassword.jsx';
 
 function AppRoutes({ session }) {
   const location = useLocation();

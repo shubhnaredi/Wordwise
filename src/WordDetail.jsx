@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { supabase } from './supabase';
-import NavBar from './components/NavBar';
+import { supabase } from './supabase.js';
+import NavBar from './components/NavBar.jsx';
 
 export default function WordDetail() {
   const { id } = useParams();

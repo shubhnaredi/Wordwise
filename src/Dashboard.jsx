@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from './supabase';
+import { supabase } from './supabase.js';
 import NavBar from './components/NavBar';
 import { motion } from 'framer-motion';
 

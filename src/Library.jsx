@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "./supabase";
+import { supabase } from "./supabase.js";
 import useLongPress from "./hooks/useLongPress";
 import { motion } from "framer-motion";
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import ToggleDarkMode from './ToggleDarkMode';
+import ToggleDarkMode from './ToggleDarkMode.jsx';
 
 export default function NavBar() {
   const location = useLocation();
