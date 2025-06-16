@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase";
-import useLongPress from "../hooks/useLongPress";
+import { supabase } from "./supabase";
+import useLongPress from "./hooks/useLongPress";
 import { motion } from "framer-motion";
 
 export default function Library() {
