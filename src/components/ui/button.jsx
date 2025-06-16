@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cn } from "@/lib/utils.js";
+import { cn } from "../../lib/utils.js";
 
 const buttonVariants = {
   default: "bg-black text-white hover:bg-gray-900",
