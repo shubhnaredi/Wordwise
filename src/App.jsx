@@ -1,88 +1,81 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 import Dashboard from './Dashboard';
 import AddWord from './AddWord';
 import Library from './Library';
-import WordDetail from './WordDetail';
 import Profile from './Profile';
 import Auth from './Auth';
-import ProtectedRoute from './ProtectedRoute';
-import Layout from './Layout';
 import UpdatePassword from './UpdatePassword';
+import WordDetail from './WordDetail';
+import { supabase } from './supabase';
+import NavBar from './components/NavBar';
+
+function AppRoutes({ session }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (
+      session &&
+      location.pathname !== '/update-password' &&
+      location.pathname !== '/auth'
+    ) {
+      navigate('/dashboard');
+    }
+  }, [session, location, navigate]);
+
+  return (
+    <>
+      {/* NavBar shown on all authenticated routes except Auth/Reset */}
+      {session &&
+        !['/auth', '/update-password'].includes(location.pathname) && (
+          <NavBar />
+        )}
+
+      <Routes>
+        <Route path="/" element={<Navigate to={session ? '/dashboard' : '/auth'} />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/add" element={<AddWord />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/library/:id" element={<WordDetail />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+      </Routes>
+    </>
+  );
+}
 
 export default function App() {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/" element={<Auth />} />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Dashboard />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/add"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <AddWord />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/library"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Library />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/library/:id"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <WordDetail />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Profile />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* 404 Fallback */}
-        <Route
-          path="*"
-          element={
-            <div className="pt-28 text-center text-red-500 text-xl font-semibold">
-              🚫 404 — Page Not Found
-            </div>
-          }
-        />
-      </Routes>
-    </Router>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-inter transition-colors duration-300">
+      <Router>
+        <AppRoutes session={session} />
+      </Router>
+    </div>
   );
 }

@@ -31,8 +31,8 @@ export default function UpdatePassword() {
     if (error) {
       setMessage(`❌ ${error.message}`);
     } else {
-      setMessage('✅ Password updated! Redirecting to login...');
-      setTimeout(() => navigate('/'), 2000);
+      setMessage('✅ Password updated! Redirecting...');
+      setTimeout(() => navigate('/auth'), 2000);
     }
     setLoading(false);
   };
