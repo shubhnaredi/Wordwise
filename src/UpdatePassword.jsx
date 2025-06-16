@@ -86,7 +86,7 @@ export default function UpdatePassword() {
         {!ready && !message && (
           <p className="text-center text-white/70 text-sm mt-6">🔄 Validating link...</p>
         )}
-      </div>
+      </div>    ``
     </div>
   );
 }

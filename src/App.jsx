@@ -21,15 +21,12 @@ import NavBar from './components/NavBar';
 function AppRoutes({ session }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const hasRedirected = useRef(false); // ✅ prevents repeated redirects
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Only redirect if not already redirected and not on exempt pages
-    if (
-      session &&
-      !['/auth', '/update-password'].includes(location.pathname) &&
-      !hasRedirected.current
-    ) {
+    const isProtectedPage = !['/auth', '/update-password'].includes(location.pathname);
+
+    if (session && isProtectedPage && !hasRedirected.current) {
       hasRedirected.current = true;
       navigate('/dashboard');
     }
@@ -37,11 +34,9 @@ function AppRoutes({ session }) {
 
   return (
     <>
-      {/* Show NavBar only if logged in and not on auth/reset */}
-      {session &&
-        !['/auth', '/update-password'].includes(location.pathname) && (
-          <NavBar />
-        )}
+      {session && !['/auth', '/update-password'].includes(location.pathname) && (
+        <NavBar />
+      )}
 
       <Routes>
         <Route path="/" element={<Navigate to={session ? '/dashboard' : '/auth'} />} />
