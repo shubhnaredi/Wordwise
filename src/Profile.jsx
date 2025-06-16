@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from './supabase.js';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "./components/ui/button"
-
+import { Button } from "./components/ui/button";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -16,43 +15,43 @@ export default function Profile() {
       if (!session) return navigate('/');
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('tags')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.tags) {
-        const tagArray = profile.tags.split(',').map(t => t.trim());
-        setTags(tagArray);
-      }
+      loadTags(user.id);
     })();
   }, []);
 
-  async function updateTags(updatedTags) {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ tags: updatedTags.join(', ') })
-      .eq('id', user.id);
-
-    if (!error) {
-      setTags(updatedTags);
-      setNewTag('');
-    } else {
-      alert(error.message);
-    }
+  async function loadTags(userId) {
+    const { data, error } = await supabase
+      .from('user_tags')
+      .select('id, tag')
+      .eq('user_id', userId)
+      .order('tag', { ascending: true });
+    if (!error) setTags(data);
   }
 
-  function handleAddTag() {
+  async function handleAddTag() {
     const tag = newTag.trim();
-    if (tag && !tags.includes(tag)) {
-      updateTags([...tags, tag]);
+    if (!tag) return;
+    const alreadyExists = tags.some(t => t.tag.toLowerCase() === tag.toLowerCase());
+    if (alreadyExists) return alert("🚫 Tag already exists.");
+
+    const { error } = await supabase.from('user_tags').insert({
+      user_id: user.id,
+      tag,
+    });
+    if (!error) {
+      setNewTag('');
+      loadTags(user.id);
     }
   }
 
-  function handleDeleteTag(tagToRemove) {
-    updateTags(tags.filter(tag => tag !== tagToRemove));
+  async function handleDeleteTag(tagId) {
+    const confirm = window.confirm("Are you sure you want to delete this tag?");
+    if (!confirm) return;
+    const { error } = await supabase
+      .from('user_tags')
+      .delete()
+      .eq('id', tagId);
+    if (!error) loadTags(user.id);
   }
 
   async function handleLogout() {
@@ -93,14 +92,14 @@ export default function Profile() {
 
           <h2 className="text-xl font-semibold mb-2">🏷️ Your Tags</h2>
           <div className="flex flex-wrap gap-2 mb-4">
-            {tags.map(tag => (
+            {tags.map(({ id, tag }) => (
               <span
-                key={tag}
+                key={id}
                 className="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm flex items-center gap-2"
               >
                 #{tag}
                 <button
-                  onClick={() => handleDeleteTag(tag)}
+                  onClick={() => handleDeleteTag(id)}
                   className="text-black hover:text-red-600 font-bold"
                 >
                   ✖
