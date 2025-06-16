@@ -14,27 +14,28 @@ import Library from './Library.jsx';
 import Profile from './Profile.jsx';
 import Auth from './Auth.jsx';
 import WordDetail from './WordDetail.jsx';
+import ResetPassword from './ResetPassword.jsx';
+
 import { supabase } from './supabase.js';
 import NavBar from './components/NavBar.jsx';
-import ResetPassword from './ResetPassword.jsx';
 
 function AppRoutes({ session }) {
   const location = useLocation();
   const navigate = useNavigate();
   const hasRedirected = useRef(false);
 
-useEffect(() => {
-  const isProtectedPage = !['/auth', '/update-password'].includes(location.pathname);
-
-  if (session && isProtectedPage && !hasRedirected.current) {
-    hasRedirected.current = true;
-    navigate('/dashboard');
-  }
-}, [session, location.pathname, navigate]);
+  useEffect(() => {
+    const isProtectedPage = !['/auth', '/reset-password'].includes(location.pathname);
+    if (session && isProtectedPage && !hasRedirected.current) {
+      hasRedirected.current = true;
+      navigate('/dashboard');
+    }
+  }, [session, location.pathname, navigate]);
 
   return (
     <>
-      {session && !['/auth', '/update-password'].includes(location.pathname) && (
+      {/* Show NavBar only when authenticated and not on auth/reset pages */}
+      {session && !['/auth', '/reset-password'].includes(location.pathname) && (
         <NavBar />
       )}
 

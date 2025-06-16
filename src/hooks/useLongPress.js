@@ -1,25 +1,37 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 
-export default function useLongPress(callback = () => {}, ms = 500) {
-  const timerRef = useRef();
+export default function useLongPress(callback = () => {}, delay = 500) {
+  const timeoutRef = useRef();
   const targetRef = useRef();
 
-  const start = useCallback((e) => {
-    e.persist?.();
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => callback(e), ms);
-  }, [callback, ms]);
+  const start = useCallback(() => {
+    timeoutRef.current = setTimeout(callback, delay);
+  }, [callback, delay]);
 
-  const clear = () => clearTimeout(timerRef.current);
+  const clear = useCallback(() => {
+    timeoutRef.current && clearTimeout(timeoutRef.current);
+  }, []);
 
-  const bind = {
-    onTouchStart: start,
-    onTouchEnd: clear,
-    onMouseDown: start,
-    onMouseUp: clear,
-    onMouseLeave: clear,
+  useEffect(() => {
+    const node = targetRef.current;
+    if (!node) return;
+
+    node.addEventListener("mousedown", start);
+    node.addEventListener("touchstart", start);
+    node.addEventListener("mouseup", clear);
+    node.addEventListener("mouseleave", clear);
+    node.addEventListener("touchend", clear);
+
+    return () => {
+      node.removeEventListener("mousedown", start);
+      node.removeEventListener("touchstart", start);
+      node.removeEventListener("mouseup", clear);
+      node.removeEventListener("mouseleave", clear);
+      node.removeEventListener("touchend", clear);
+    };
+  }, [start, clear]);
+
+  return {
     ref: targetRef,
   };
-
-  return bind;
 }

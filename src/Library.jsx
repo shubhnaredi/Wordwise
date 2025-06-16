@@ -1,92 +1,108 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "./supabase.js";
-import useLongPress from "./hooks/useLongPress";
-import { motion } from "framer-motion";
+import React, { useContext, useEffect, useState } from 'react';
+import { UserContext } from './contexts/UserContext';
+import { supabase } from './supabase';
+import WordItem from "./WordItem";
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSearch } from "react-icons/fi";
 
-export default function Library() {
+
+const Library = () => {
+  const { session } = useContext(UserContext);
   const [words, setWords] = useState([]);
-  const [selectedWords, setSelectedWords] = useState([]);
-  const [multiSelectMode, setMultiSelectMode] = useState(false);
-  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
+  const [availableTags, setAvailableTags] = useState([]);
 
   useEffect(() => {
-    fetchWords();
-  }, []);
+    if (session) fetchWords();
+  }, [session]);
 
-  async function fetchWords() {
-    const { data } = await supabase.from("words").select("*").order("date_added", { ascending: false });
-    setWords(data);
-  }
+  const fetchWords = async () => {
+    const { data, error } = await supabase
+      .from('words')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('date_added', { ascending: false });
 
-  function handleLongPress(wordId) {
-    setMultiSelectMode(true);
-    setSelectedWords([wordId]);
-  }
-
-  function toggleSelect(wordId) {
-    if (!multiSelectMode) return navigate(`/library/${wordId}`);
-    setSelectedWords((prev) =>
-      prev.includes(wordId) ? prev.filter((id) => id !== wordId) : [...prev, wordId]
-    );
-  }
-
-  async function handleDelete() {
-    if (!selectedWords.length) return;
-    const confirmDelete = window.confirm(`Delete ${selectedWords.length} word(s)?`);
-    if (!confirmDelete) return;
-
-    const { error } = await supabase.from("words").delete().in("id", selectedWords);
-    if (!error) {
-      setWords(words.filter((w) => !selectedWords.includes(w.id)));
-      setSelectedWords([]);
-      setMultiSelectMode(false);
+    if (error) console.error('Error fetching words:', error);
+    else {
+      setWords(data);
+      const allTags = new Set(data.flatMap(word => word.tags || []));
+      setAvailableTags([...allTags]);
     }
-  }
+  };
 
-  function handleClearSelection() {
-    setSelectedWords([]);
-    setMultiSelectMode(false);
-  }
+  const filteredWords = words.filter(word => {
+    const matchesSearch = word.word.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag = selectedTag ? word.tags?.includes(selectedTag) : true;
+    return matchesSearch && matchesTag;
+  });
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Library</h2>
-        {multiSelectMode && (
-          <div className="space-x-2">
-            <button onClick={handleClearSelection} className="text-sm bg-gray-200 px-3 py-1 rounded">
-              Clear
-            </button>
-            <button onClick={handleDelete} className="text-sm bg-red-500 text-white px-3 py-1 rounded">
-              Delete ({selectedWords.length})
-            </button>
-          </div>
-        )}
+    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4 text-white">📚 Your Vocabulary</h1>
+
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search words..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/10 text-white backdrop-blur-md border border-white/20 focus:outline-none"
+        />
       </div>
 
-      <div className="space-y-2">
-        {words.map((word) => {
-          const bind = useLongPress(() => handleLongPress(word.id), 600);
+      {/* Tags filter */}
+      {availableTags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {availableTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+              className={`px-3 py-1 rounded-full text-sm border transition duration-200 ${
+                selectedTag === tag
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-white border-white/30 hover:bg-white/10'
+              }`}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
 
-          return (
+      {/* Word list */}
+      <div className="space-y-4">
+        <AnimatePresence>
+          {filteredWords.map(word => (
             <motion.div
               key={word.id}
-              {...bind}
-              onClick={() => toggleSelect(word.id)}
-              className={`border p-3 rounded cursor-pointer ${
-                selectedWords.includes(word.id)
-                  ? "bg-blue-100 border-blue-500"
-                  : "hover:bg-gray-50"
-              }`}
-              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
             >
-              <h3 className="text-lg font-medium">{word.word}</h3>
-              <p className="text-sm text-gray-600">{word.meaning}</p>
+              <WordItem word={word} />
             </motion.div>
-          );
-        })}
+          ))}
+        </AnimatePresence>
       </div>
+
+      {/* Empty state */}
+      {filteredWords.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-white/70 mt-10"
+        >
+          <p className="text-lg">No words found.</p>
+          <p className="text-sm">Try changing the search or tag filters.</p>
+        </motion.div>
+      )}
     </div>
   );
-}
+};
+
+export default Library;
